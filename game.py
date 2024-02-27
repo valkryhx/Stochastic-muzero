@@ -157,6 +157,7 @@ class Game():
                                  ).flatten()[None,...]
         else:
             try: 
+                print(f'state={state}')
                 state =  torch.tensor([float(i) for i in state] ,
                                        dtype=torch.float
                                        ).flatten()[None,...]
