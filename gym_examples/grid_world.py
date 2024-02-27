@@ -155,8 +155,8 @@ class GridWorldEnv(gym.Env):
 # ``reset`` and ``step`` separately:
 
     def _get_obs(self):
-        return {"agent": self._agent_location, "target": self._target_location}
-
+        #return {"agent": self._agent_location, "target": self._target_location}
+        return self._agent_location
 # %%
 # We can also implement a similar method for the auxiliary information
 # that is returned by ``step`` and ``reset``. In our case, we would like
