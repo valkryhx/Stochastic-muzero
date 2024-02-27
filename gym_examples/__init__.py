@@ -1,4 +1,4 @@
-from gym_examples.envs.grid_world import GridWorldEnv
+from gym_examples.grid_world import GridWorldEnv
 from gymnasium.envs.registration import register
 
 register(
