@@ -162,9 +162,10 @@ class Game():
                                        dtype=torch.float
                                        ).flatten()[None,...]
             except: 
-                state = torch.tensor([float(state)] ,
-                                         dtype=torch.float
-                                         ).flatten()[None,...]
+                # state = torch.tensor([float(state)] ,
+                #                          dtype=torch.float
+                #                          ).flatten()[None,...]
+                state = state.flatten()[None,...]
         return state
     
     @property
