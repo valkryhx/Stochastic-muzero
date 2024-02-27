@@ -105,7 +105,26 @@ class GridWorldEnv(gym.Env):
     def __init__(self, render_mode=None, size=5):
         self.size = size  # The size of the square grid
         self.window_size = 512  # The size of the PyGame window
+        
+        self.position = None # [0, 0]
+        self.MARK_NEGATIVE =0.0
+        # grid reset
+        a_100 = list(range(1, self.size*self.size + 1))
+        random.shuffle(a_100)
+        self.grid = numpy.array(a_100).reshape(self.size, self.size) / len(a_100)  # np.random.random((10, 10))
+        #self._agent_location = self.np_random.integers(0, self.size, size=2, dtype=int)
+        numpy.fill_diagonal(self.grid, self.MARK_NEGATIVE)
+        # h score reset 
+        #self.h_score = self.heuristic_score()
+        #self.agent_get_reward =0
+        # 每次step都会更新 _used_actions ，使用_actions - _used_actions - _invalid_actions，剩下的才是合法的action space
+        self._used_actions=set([])
+        # invalid actions 比如0 11,22,,,99
+        self._invalid_actions = set([i for i in range(self.size*self.size) if i//self.size == i%self.size])
+        # action space reset
+        self._actions = set(range(self.size * self.size)) -self._invalid_actions
 
+       
         # Observations are dictionaries with the agent's and the target's location.
         # Each location is encoded as an element of {0, ..., `size`}^2, i.e. MultiDiscrete([size, size]).
         # self.observation_space = spaces.Dict(
@@ -114,22 +133,22 @@ class GridWorldEnv(gym.Env):
         #         "target": spaces.Box(0, size - 1, shape=(2,), dtype=int),
         #     }
         # )
-        self.observation_space = spaces.Box(0, size - 1, shape=(2,), dtype=int)
+        self.observation_space = spaces.Box(0, 1, shape=(size,size), dtype=float)
 
         # We have 4 actions, corresponding to "right", "up", "left", "down"
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(100)
 
         """
         The following dictionary maps abstract actions from `self.action_space` to
         the direction we will walk in if that action is taken.
         I.e. 0 corresponds to "right", 1 to "up" etc.
         """
-        self._action_to_direction = {
-            0: np.array([1, 0]),
-            1: np.array([0, 1]),
-            2: np.array([-1, 0]),
-            3: np.array([0, -1]),
-        }
+        # self._action_to_direction = {
+        #     0: np.array([1, 0]),
+        #     1: np.array([0, 1]),
+        #     2: np.array([-1, 0]),
+        #     3: np.array([0, -1]),
+        # }
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
@@ -156,7 +175,7 @@ class GridWorldEnv(gym.Env):
 
     def _get_obs(self):
         #return {"agent": self._agent_location, "target": self._target_location}
-        return self._agent_location
+        return self.grid
 # %%
 # We can also implement a similar method for the auxiliary information
 # that is returned by ``step`` and ``reset``. In our case, we would like
@@ -164,9 +183,10 @@ class GridWorldEnv(gym.Env):
 
     def _get_info(self):
         return {
-            "distance": np.linalg.norm(
-                self._agent_location - self._target_location, ord=1
-            )
+            #"distance": np.linalg.norm(
+            #    self._agent_location - self._target_location, ord=1
+            #)
+           "info":1
         }
 
 # %%
@@ -203,14 +223,31 @@ class GridWorldEnv(gym.Env):
         super().reset(seed=seed)
 
         # Choose the agent's location uniformly at random
-        self._agent_location = self.np_random.integers(0, self.size, size=2, dtype=int)
+        # self._agent_location = self.np_random.integers(0, self.size, size=2, dtype=int)
 
         # We will sample the target's location randomly until it does not coincide with the agent's location
-        self._target_location = self._agent_location
-        while np.array_equal(self._target_location, self._agent_location):
-            self._target_location = self.np_random.integers(
-                0, self.size, size=2, dtype=int
-            )
+        # self._target_location = self._agent_location
+        # while np.array_equal(self._target_location, self._agent_location):
+        #     self._target_location = self.np_random.integers(
+        #         0, self.size, size=2, dtype=int
+        #     )
+        self.position = None # [0, 0]
+        self.MARK_NEGATIVE =0.0
+        # grid reset
+        a_100 = list(range(1, self.size*self.size + 1))
+        random.shuffle(a_100)
+        self.grid = numpy.array(a_100).reshape(self.size, self.size) / len(a_100)  # np.random.random((10, 10))
+        #self._agent_location = self.np_random.integers(0, self.size, size=2, dtype=int)
+        numpy.fill_diagonal(self.grid, self.MARK_NEGATIVE)
+        # h score reset 
+        #self.h_score = self.heuristic_score()
+        #self.agent_get_reward =0
+        # 每次step都会更新 _used_actions ，使用_actions - _used_actions - _invalid_actions，剩下的才是合法的action space
+        self._used_actions=set([])
+        # invalid actions 比如0 11,22,,,99
+        self._invalid_actions = set([i for i in range(self.size*self.size) if i//self.size == i%self.size])
+        # action space reset
+        self._actions = set(range(self.size * self.size)) -self._invalid_actions
 
         observation = self._get_obs()
         info = self._get_info()
@@ -234,23 +271,55 @@ class GridWorldEnv(gym.Env):
 # ``GridWorldEnv``, computing ``reward`` is trivial once we know
 # ``done``.To gather ``observation`` and ``info``, we can again make
 # use of ``_get_obs`` and ``_get_info``:
-
+    def legal_actions(self):
+        legal_actions = self._actions
+        if self.position and len(self.position)>1:
+            # for example self.position=[2,9]
+            #chosen_action = self.position[0]*self.size + self.position[1]
+            marked_row_act_0 = set(range(self.position[0]*self.size,(self.position[0]+1)*self.size))
+            marked_row_act_1 = set(range(self.position[1] * self.size, (self.position[1] + 1) * self.size))
+            marked_col_act_0 = set([idx*self.size + self.position[0] for idx in range(self.size)])
+            marked_col_act_1 = set([idx * self.size + self.position[1] for idx in range(self.size)])
+            self._used_actions = self._used_actions | marked_row_act_0 | marked_row_act_1 | marked_col_act_0 | marked_col_act_1
+            legal_actions = list(legal_actions -self._invalid_actions -  self._used_actions)
+        #print(f'legal_actions={legal_actions}')
+        return legal_actions #list(self._actions)
+       
     def step(self, action):
+        
+        if action not in self.legal_actions() or len(self.legal_actions())==0 :
+            pass
+        if not self.position:
+            self.position =[-1,-1] # position[-1,-1]表示不在grid上的位置只是为了占位
+        self.position[0] = action // self.size
+        self.position[1] = action %  self.size
+        #reward = 1 if self.position == [self.size - 1] * 2 else 0
+        #不能写成reward = self.grid[self.position] 因为self.position=[1,1] 会导致grid[1,1]取得是两行
+        # 或者写成reward = self.grid[self.position[0],self.position[1]] 
+        #reward = self.grid[*self.position] 
+        reward = self.grid[self.position[0],self.position[1]] #- self.h_score / (self.size/2)
+        self.agent_get_reward += reward
+        #print(f'123reward={reward}')
+        # grid 变化太大？
+        self.grid[self.position, :] = self.MARK_NEGATIVE
+        self.grid[:, self.position] = self.MARK_NEGATIVE
+        done = (numpy.max(self.grid) <= self.MARK_NEGATIVE) or len(self.legal_actions())==0
+       
         # Map the action (element of {0,1,2,3}) to the direction we walk in
-        direction = self._action_to_direction[action]
+        #direction = self._action_to_direction[action]
         # We use `np.clip` to make sure we don't leave the grid
-        self._agent_location = np.clip(
-            self._agent_location + direction, 0, self.size - 1
-        )
+        #self._agent_location = np.clip(
+        #    self._agent_location + direction, 0, self.size - 1
+        #)
         # An episode is done iff the agent has reached the target
-        terminated = np.array_equal(self._agent_location, self._target_location)
-        reward = 1 if terminated else 0  # Binary sparse rewards
+        terminated = done#np.array_equal(self._agent_location, self._target_location)
+        #reward = 1 if terminated else 0  # Binary sparse rewards
         observation = self._get_obs()
         info = self._get_info()
 
         if self.render_mode == "human":
             self._render_frame()
-
+        
         return observation, reward, terminated, False, info
 
 # %%
@@ -286,7 +355,7 @@ class GridWorldEnv(gym.Env):
             canvas,
             (255, 0, 0),
             pygame.Rect(
-                pix_square_size * self._target_location,
+                pix_square_size * self.grid,
                 (pix_square_size, pix_square_size),
             ),
         )
@@ -294,7 +363,7 @@ class GridWorldEnv(gym.Env):
         pygame.draw.circle(
             canvas,
             (0, 0, 255),
-            (self._agent_location + 0.5) * pix_square_size,
+            (self.grid + 0.5) * pix_square_size,
             pix_square_size / 3,
         )
 
