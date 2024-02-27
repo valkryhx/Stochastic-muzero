@@ -97,7 +97,7 @@ import pygame
 
 import gymnasium as gym
 from gymnasium import spaces
-
+import random 
 
 class GridWorldEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
@@ -111,9 +111,9 @@ class GridWorldEnv(gym.Env):
         # grid reset
         a_100 = list(range(1, self.size*self.size + 1))
         random.shuffle(a_100)
-        self.grid = numpy.array(a_100).reshape(self.size, self.size) / len(a_100)  # np.random.random((10, 10))
+        self.grid = np.array(a_100).reshape(self.size, self.size) / len(a_100)  # np.random.random((10, 10))
         #self._agent_location = self.np_random.integers(0, self.size, size=2, dtype=int)
-        numpy.fill_diagonal(self.grid, self.MARK_NEGATIVE)
+        np.fill_diagonal(self.grid, self.MARK_NEGATIVE)
         # h score reset 
         #self.h_score = self.heuristic_score()
         #self.agent_get_reward =0
@@ -236,9 +236,9 @@ class GridWorldEnv(gym.Env):
         # grid reset
         a_100 = list(range(1, self.size*self.size + 1))
         random.shuffle(a_100)
-        self.grid = numpy.array(a_100).reshape(self.size, self.size) / len(a_100)  # np.random.random((10, 10))
+        self.grid = np.array(a_100).reshape(self.size, self.size) / len(a_100)  # np.random.random((10, 10))
         #self._agent_location = self.np_random.integers(0, self.size, size=2, dtype=int)
-        numpy.fill_diagonal(self.grid, self.MARK_NEGATIVE)
+        np.fill_diagonal(self.grid, self.MARK_NEGATIVE)
         # h score reset 
         #self.h_score = self.heuristic_score()
         #self.agent_get_reward =0
@@ -303,7 +303,7 @@ class GridWorldEnv(gym.Env):
         # grid 变化太大？
         self.grid[self.position, :] = self.MARK_NEGATIVE
         self.grid[:, self.position] = self.MARK_NEGATIVE
-        done = (numpy.max(self.grid) <= self.MARK_NEGATIVE) or len(self.legal_actions())==0
+        done = (np.max(self.grid) <= self.MARK_NEGATIVE) or len(self.legal_actions())==0
        
         # Map the action (element of {0,1,2,3}) to the direction we walk in
         #direction = self._action_to_direction[action]
