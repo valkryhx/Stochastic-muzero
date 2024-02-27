@@ -335,6 +335,7 @@ class Muzero:
         if "vision" in model_structure:
             observation_dimension_per_model = (98, 98, 3)
         else:
+            print(f'observation_space_dimensions={observation_space_dimensions}')
             observation_dimension_per_model = self.obs_space(observation_space_dimensions)
         return observation_dimension_per_model
          
